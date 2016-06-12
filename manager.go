@@ -1,7 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
+	"net/http"
+	"time"
+
+	"golang.org/x/net/websocket"
 )
 
 type LedManager struct {
@@ -57,7 +62,18 @@ func (l *LedManager) Start() {
 		go r.Start()
 	}
 
+	// Start Visualizers
 	for _, v := range l.visualizers {
 		go v.Start()
 	}
+
+	// Start HTTP server
+	http.Handle("/buffer", websocket.Handler(func(ws *websocket.Conn) {
+		for range time.Tick(100 * time.Millisecond) {
+			j, _ := json.Marshal(l.buffer)
+			ws.Write(j)
+		}
+	}))
+	http.Handle("/", http.FileServer(http.Dir("./web")))
+	go http.ListenAndServe(":8080", nil)
 }

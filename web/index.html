@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8" />
+<title>Led Manager</title>
+<script language="javascript" type="text/javascript">
+  var canvas;
+
+  function init()
+  {
+    canvas = document.getElementById('canvas');
+    testWebSocket();
+  }
+
+  function testWebSocket()
+  {
+    websocket = new WebSocket('ws://thor.soete.org:8080/buffer');
+    websocket.onmessage = function(evt) { onMessage(evt) };
+    websocket.onerror = function(evt) { onError(evt) };
+  }
+
+  function onMessage(evt)
+  {
+    try
+    {
+      var ctx = canvas.getContext('2d');
+      var data = JSON.parse(evt.data);
+      var start = 0;
+      for(var i = 0; i < data.length; i++)
+      {
+        var led = data[i];
+        ctx.fillStyle = 'rgb(' + Math.floor(255*led.Red) + ',' + Math.floor(255*led.Green) + ',' +  Math.floor(255*led.Blue) + ')';
+        ctx.fillRect(start, 0, 20, 40);
+        start += 5;
+      }
+    }
+    catch (e)
+    {
+      console.error("Parsing JSON: ", e);
+    }
+  }
+
+  function onError(evt)
+  {
+    console.error('WebSocket: ' + evt.data);
+  }
+
+  window.addEventListener('load' , init, false);
+</script>
+<body>
+<h2>LedManager - UI</h2>
+<canvas id="canvas" width="640" height="20" style="border:1px solid #d3d3d3;">
+</body>
+</html>
