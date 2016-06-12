@@ -2,13 +2,13 @@ package main
 
 import (
 	"log"
-	"time"
 )
 
 type LedManager struct {
 	buffer []Led
 
-	renderers []Renderer
+	renderers   []Renderer
+	visualizers []Visualizer
 }
 
 func NewLedManager() *LedManager {
@@ -17,6 +17,16 @@ func NewLedManager() *LedManager {
 
 func (l *LedManager) AttachRenderer(r Renderer) {
 	l.renderers = append(l.renderers, r)
+}
+
+func (l *LedManager) AttachVisualizer(v Visualizer, start int, end int) {
+	l.visualizers = append(l.visualizers, v)
+	go func() {
+		for {
+			d := <-v.GetOutputChan()
+			copy(l.buffer[start:end+1], d)
+		}
+	}()
 }
 
 func (l *LedManager) Start() {
@@ -47,13 +57,7 @@ func (l *LedManager) Start() {
 		go r.Start()
 	}
 
-	// Do rainbow over buffer
-	j := 0.0
-	for range time.Tick(100 * time.Millisecond) {
-		j += 0.03
-		for i := 0; i < totalSize; i++ {
-			r, g, b := hueToRGB(j + float64(i)/128.0)
-			l.buffer[i] = Led{r, g, b, 0}
-		}
+	for _, v := range l.visualizers {
+		go v.Start()
 	}
 }
