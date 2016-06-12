@@ -3,13 +3,18 @@ package main
 import ()
 
 type BaseRenderer struct {
-	getData getterFunc
+	Renderer
+	getters []getterFunc
 }
 
 func NewBaseRenderer() *BaseRenderer {
 	return &BaseRenderer{}
 }
 
-func (r *BaseRenderer) SetGetter(g getterFunc) {
-	r.getData = g
+func (r *BaseRenderer) SetGetters(g []getterFunc) {
+	r.getters = g
+}
+
+func (r *BaseRenderer) GetData(i int) []Led {
+	return r.getters[i]()
 }

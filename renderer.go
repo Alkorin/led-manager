@@ -5,7 +5,7 @@ import ()
 type getterFunc func() []Led
 
 type Renderer interface {
-	Size() int
-	SetGetter(getterFunc)
+	Size() []int
+	SetGetters([]getterFunc)
 	Start()
 }

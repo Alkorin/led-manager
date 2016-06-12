@@ -1,0 +1,24 @@
+package main
+
+import ()
+
+type SingleRenderer struct {
+	BaseRenderer
+
+	size int
+}
+
+func NewSingleRenderer(size int) *SingleRenderer {
+	return &SingleRenderer{
+		BaseRenderer: *NewBaseRenderer(),
+		size:         size,
+	}
+}
+
+func (r *SingleRenderer) GetData() []Led {
+	return r.getters[0]()
+}
+
+func (r *SingleRenderer) Size() []int {
+	return []int{r.size}
+}

@@ -23,7 +23,9 @@ func (l *LedManager) Start() {
 	// Allocate needed memory
 	totalSize := 0
 	for _, r := range l.renderers {
-		totalSize += r.Size()
+		for _, s := range r.Size() {
+			totalSize += s
+		}
 	}
 
 	log.Printf("Total renderer size: %d", totalSize)
@@ -32,14 +34,17 @@ func (l *LedManager) Start() {
 	// Attach getter for each renderers
 	curPos := 0
 	for _, r := range l.renderers {
-		rendererSize := r.Size()
-		start := curPos
-		end := curPos + rendererSize
-		r.SetGetter(func() []Led {
-			return l.buffer[start:end]
-		})
+		getters := make([]getterFunc, len(r.Size()))
+		for i, rendererSize := range r.Size() {
+			start := curPos
+			end := curPos + rendererSize
+			getters[i] = func() []Led {
+				return l.buffer[start:end]
+			}
+			curPos += rendererSize
+		}
+		r.SetGetters(getters)
 		go r.Start()
-		curPos += rendererSize
 	}
 
 	// Do rainbow over buffer
