@@ -3,8 +3,6 @@ package main
 import ()
 
 type BaseVisualizer struct {
-	Visualizer
-
 	outputChan chan []Led
 }
 

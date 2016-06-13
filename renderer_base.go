@@ -3,7 +3,6 @@ package main
 import ()
 
 type BaseRenderer struct {
-	Renderer
 	getters []getterFunc
 }
 
