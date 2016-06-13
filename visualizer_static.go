@@ -11,7 +11,7 @@ type StaticColorVisualizer struct {
 
 func NewStaticColorVisualizer(length int, color Led) *StaticColorVisualizer {
 	return &StaticColorVisualizer{
-		BaseVisualizer: *NewBaseVisualizer(),
+		BaseVisualizer: *NewBaseVisualizer("Static"),
 		length:         length,
 		color:          color,
 	}

@@ -77,6 +77,17 @@ func (l *LedManager) Start() {
 			}
 		}
 	}))
+	http.HandleFunc("/api/visualizer", func(w http.ResponseWriter, r *http.Request) {
+		m := make([]ApiVisualizer, 0, len(l.visualizers))
+		for _, v := range l.visualizers {
+			m = append(m, ApiVisualizer{
+				Name:       v.Name(),
+				Properties: GetVisualizerProperties(v),
+			})
+		}
+		j, _ := json.Marshal(m)
+		w.Write(j)
+	})
 	http.Handle("/", http.FileServer(http.Dir("./web")))
 	go http.ListenAndServe(":8080", nil)
 }
