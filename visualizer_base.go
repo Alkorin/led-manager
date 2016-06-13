@@ -20,6 +20,6 @@ func (v *BaseVisualizer) SendData(d []Led) {
 	}
 }
 
-func (v *BaseVisualizer) GetOutputChan() <-chan []Led {
+func (v *BaseVisualizer) OutputChan() <-chan []Led {
 	return v.outputChan
 }

@@ -28,7 +28,7 @@ func (l *LedManager) AttachVisualizer(v Visualizer, start int, end int) {
 	l.visualizers = append(l.visualizers, v)
 	go func() {
 		for {
-			d := <-v.GetOutputChan()
+			d := <-v.OutputChan()
 			copy(l.buffer[start:end+1], d)
 		}
 	}()
