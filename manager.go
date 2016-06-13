@@ -71,7 +71,10 @@ func (l *LedManager) Start() {
 	http.Handle("/buffer", websocket.Handler(func(ws *websocket.Conn) {
 		for range time.Tick(100 * time.Millisecond) {
 			j, _ := json.Marshal(l.buffer)
-			ws.Write(j)
+			_, err := ws.Write(j)
+			if err != nil {
+				break
+			}
 		}
 	}))
 	http.Handle("/", http.FileServer(http.Dir("./web")))
