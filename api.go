@@ -3,7 +3,7 @@ package main
 import ()
 
 type ApiVisualizer struct {
-	Name       string
-	ID         uint64
-	Properties []VisualizerProperty
+	Name       string               `json:"name"`
+	ID         uint64               `json:"id"`
+	Properties []VisualizerProperty `json:"properties"`
 }
