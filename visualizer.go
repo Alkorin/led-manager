@@ -18,6 +18,7 @@ type Visualizer interface {
 type VisualizerProperty struct {
 	Name  string
 	Value interface{}
+	Type  string
 }
 
 func GetVisualizerProperties(v Visualizer) []VisualizerProperty {
@@ -34,6 +35,7 @@ func GetVisualizerProperties(v Visualizer) []VisualizerProperty {
 				properties = append(properties, VisualizerProperty{
 					Name:  fieldType.Name,
 					Value: fieldValue.Interface(),
+					Type:  fieldType.Type.Name(),
 				})
 			}
 		}
