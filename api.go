@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dimfeld/httptreemux"
 	"golang.org/x/net/websocket"
 )
 
@@ -15,16 +16,19 @@ type ApiVisualizer struct {
 }
 
 func (l *LedManager) StartApi() {
-	http.Handle("/buffer", websocket.Handler(func(ws *websocket.Conn) {
-		for range time.Tick(100 * time.Millisecond) {
-			j, _ := json.Marshal(l.buffer)
-			_, err := ws.Write(j)
-			if err != nil {
-				break
+	router := httptreemux.New()
+	router.GET("/buffer", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
+		websocket.Handler(func(ws *websocket.Conn) {
+			for range time.Tick(100 * time.Millisecond) {
+				j, _ := json.Marshal(l.buffer)
+				_, err := ws.Write(j)
+				if err != nil {
+					break
+				}
 			}
-		}
-	}))
-	http.HandleFunc("/api/visualizer", func(w http.ResponseWriter, r *http.Request) {
+		}).ServeHTTP(w, r)
+	})
+	router.GET("/api/visualizer", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
 		m := make([]ApiVisualizer, 0, len(l.visualizers))
 		for _, v := range l.visualizers {
 			m = append(m, ApiVisualizer{
@@ -36,6 +40,6 @@ func (l *LedManager) StartApi() {
 		j, _ := json.Marshal(m)
 		w.Write(j)
 	})
-	http.Handle("/", http.FileServer(http.Dir("./web")))
-	http.ListenAndServe(":8080", nil)
+	router.NotFoundHandler = http.FileServer(http.Dir("./web")).ServeHTTP
+	http.ListenAndServe(":8080", router)
 }
