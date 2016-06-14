@@ -4,12 +4,15 @@ import (
 	"reflect"
 )
 
+var visualizerIdCounter uint64 = 0
+
 type Visualizer interface {
 	OutputChan() <-chan []Led
 	Start()
 
 	// Methods for API
 	Name() string
+	ID() uint64
 }
 
 type VisualizerProperty struct {

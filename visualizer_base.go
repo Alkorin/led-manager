@@ -1,16 +1,20 @@
 package main
 
-import ()
+import (
+	"sync/atomic"
+)
 
 type BaseVisualizer struct {
 	outputChan chan []Led
 	name       string
+	id         uint64
 }
 
 func NewBaseVisualizer(name string) *BaseVisualizer {
 	return &BaseVisualizer{
 		outputChan: make(chan []Led, 1),
 		name:       name,
+		id:         atomic.AddUint64(&visualizerIdCounter, 1),
 	}
 }
 
@@ -28,4 +32,8 @@ func (v *BaseVisualizer) OutputChan() <-chan []Led {
 
 func (v *BaseVisualizer) Name() string {
 	return v.name
+}
+
+func (v *BaseVisualizer) ID() uint64 {
+	return v.id
 }
