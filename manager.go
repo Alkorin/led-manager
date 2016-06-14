@@ -82,6 +82,7 @@ func (l *LedManager) Start() {
 		for _, v := range l.visualizers {
 			m = append(m, ApiVisualizer{
 				Name:       v.Name(),
+				ID:         v.ID(),
 				Properties: GetVisualizerProperties(v),
 			})
 		}
