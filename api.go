@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -58,6 +59,34 @@ func (l *LedManager) StartApi() {
 		}
 		w.WriteHeader(http.StatusNotFound)
 	})
+	router.PUT("/api/visualizer/:id/properties", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
+		ID, err := strconv.ParseUint(params["id"], 10, 64)
+		if err == nil {
+			for _, v := range l.visualizers {
+				if ID == v.ID() {
+					body, _ := ioutil.ReadAll(r.Body)
+					data := map[string]interface{}{}
+					err := json.Unmarshal(body, &data)
+					if err != nil {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte(err.Error()))
+						return
+					}
+					if err := SetVisualizerProperties(v, data); err != nil {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte(err.Error()))
+						return
+					} else {
+						// OK
+						return
+					}
+
+				}
+			}
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+
 	router.NotFoundHandler = http.FileServer(http.Dir("./web")).ServeHTTP
 	http.ListenAndServe(":8080", router)
 }

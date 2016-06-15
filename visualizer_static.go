@@ -24,6 +24,14 @@ func NewStaticColorVisualizer(length int, color Led) *StaticColorVisualizer {
 }
 
 func (v *StaticColorVisualizer) Start() {
+	v.SendColor()
+}
+
+func (v *StaticColorVisualizer) OnPropertyChanged(string) {
+	v.SendColor()
+}
+
+func (v *StaticColorVisualizer) SendColor() {
 	d := make([]Led, v.length)
 	color := Led{v.Red, v.Green, v.Blue, v.White}
 	for i := range d {

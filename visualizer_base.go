@@ -37,3 +37,6 @@ func (v *BaseVisualizer) Name() string {
 func (v *BaseVisualizer) ID() uint64 {
 	return v.id
 }
+
+func (v *BaseVisualizer) OnPropertyChanged(string) {
+}
