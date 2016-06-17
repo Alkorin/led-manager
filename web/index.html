@@ -2,52 +2,101 @@
 <html>
 <meta charset="utf-8" />
 <title>Led Manager</title>
+<script src="https://code.jquery.com/jquery-3.0.0.js" integrity="sha256-jrPLZ+8vDxt2FnE1zvZXCkCcebI/C8Dt5xyaQBjxQIo=" crossorigin="anonymous"></script>
 <script language="javascript" type="text/javascript">
-  var canvas;
+  const LED_SIZE = 5;
+  var canvasContext;
 
-  function init()
-  {
-    canvas = document.getElementById('canvas');
-    testWebSocket();
+  $( document ).ready(function() {
+    createVisualizers();
+    canvasContext = $("#canvas")[0].getContext('2d');
+    startBufferDisplay();
+  });
+
+  function startBufferDisplay() {
+    ws = new WebSocket('ws://thor.soete.org:8080/buffer');
+    ws.onmessage = function(evt) { onMessage(evt) };
+    ws.onerror = function(evt) { console.error('WebSocket: ' + evt.data); };
   }
 
-  function testWebSocket()
-  {
-    websocket = new WebSocket('ws://thor.soete.org:8080/buffer');
-    websocket.onmessage = function(evt) { onMessage(evt) };
-    websocket.onerror = function(evt) { onError(evt) };
-  }
-
-  function onMessage(evt)
-  {
-    try
-    {
-      var ctx = canvas.getContext('2d');
+  function onMessage(evt) {
+    try {
       var data = JSON.parse(evt.data);
-      var start = 0;
-      for(var i = 0; i < data.length; i++)
-      {
+      for(var i = 0; i < data.length; i++) {
         var led = data[i];
-        ctx.fillStyle = 'rgb(' + Math.floor(255*led.Red) + ',' + Math.floor(255*led.Green) + ',' +  Math.floor(255*led.Blue) + ')';
-        ctx.fillRect(start, 0, 20, 40);
-        start += 5;
+        canvasContext.fillStyle = 'rgb(' + Math.floor(255*led.Red) + ',' + Math.floor(255*led.Green) + ',' +  Math.floor(255*led.Blue) + ')';
+        canvasContext.fillRect(LED_SIZE*i, 0, LED_SIZE, 40);
       }
-    }
-    catch (e)
-    {
+    } catch (e) {
       console.error("Parsing JSON: ", e);
     }
   }
 
-  function onError(evt)
-  {
-    console.error('WebSocket: ' + evt.data);
+  function createVisualizers() {
+    $.getJSON("api/visualizer", function (response) {
+      for(var i in response) {
+        v = response[i];
+        var div = $("#visualizer").clone().attr('id', 'visualizer-'+v.id);
+        div.find("#visualizerTitle").html(v.name);
+        if (v.properties) {
+          var ul = $('<ul></ul>');
+          for(var j in v.properties) {
+            var property = v.properties[j];
+            var input = $('<input>').attr({
+              type: 'range',
+              min: 0,
+              max: 1,
+              step: 0.01,
+              value: property.value,
+            }).change(function(visualizerId, propertyName) {
+              return function() {
+                var data = {};
+                data[propertyName] = parseFloat($(this).val());
+                $.ajax({
+                  url: 'api/visualizer/'+visualizerId+'/properties',
+                  type: 'PUT',
+                  contentType: 'application/json',
+                  data: JSON.stringify(data),
+                });
+              }
+            }(v.id, j));
+            ul.append($('<li></li>').append($('<div>',{text:j})).append(input))
+          }
+          div.find("#visualizerProperties").append(ul);
+        }
+        div.show();
+        div.appendTo("#visualizers");
+      }
+      $("#visualizers").show()
+    });
+    var iDiv = document.createElement('div');
+    iDiv.id = 'block';
+    iDiv.className = 'block';
+    document.getElementById('visualizers').appendChild(iDiv);
   }
 
-  window.addEventListener('load' , init, false);
 </script>
+<style>
+  .visualizer {
+    width: 200px;
+    margin: 5px;
+    float: left;
+    border: 1px solid #888880;
+  }
+  #visualizerTitle {
+    width: 100%;
+    text-align: center;
+  }
+</style>
 <body>
 <h2>LedManager - UI</h2>
-<canvas id="canvas" width="640" height="20" style="border:1px solid #d3d3d3;">
+<div id="visualizers" style="display:none">
+</div>
+<div style="clear:both"></div>
+<canvas id="canvas" width="640" height="20" style="border:1px solid #d3d3d3;"></canvas>
+<div id="visualizer" class="visualizer" style="display:none;">
+  <div id="visualizerTitle"></div>
+  <div id="visualizerProperties"></div>
+</div>
 </body>
 </html>
