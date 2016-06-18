@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+
+	"github.com/steeve/broadcaster"
 )
 
 type LedManager struct {
@@ -9,10 +11,13 @@ type LedManager struct {
 
 	renderers   []Renderer
 	visualizers []Visualizer
+	events      *broadcaster.Broadcaster
 }
 
 func NewLedManager() *LedManager {
-	return &LedManager{}
+	return &LedManager{
+		events: broadcaster.NewBroadcaster(),
+	}
 }
 
 func (l *LedManager) AttachRenderer(r Renderer) {

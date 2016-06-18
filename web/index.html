@@ -14,7 +14,7 @@
   });
 
   function startBufferDisplay() {
-    ws = new WebSocket('ws://thor.soete.org:8080/buffer');
+    ws = new WebSocket('ws://thor.soete.org:8080/events');
     ws.onmessage = function(evt) { onMessage(evt) };
     ws.onerror = function(evt) { console.error('WebSocket: ' + evt.data); };
   }
@@ -22,10 +22,12 @@
   function onMessage(evt) {
     try {
       var data = JSON.parse(evt.data);
-      for(var i = 0; i < data.length; i++) {
-        var led = data[i];
-        canvasContext.fillStyle = 'rgb(' + Math.floor(255*led.Red) + ',' + Math.floor(255*led.Green) + ',' +  Math.floor(255*led.Blue) + ')';
-        canvasContext.fillRect(LED_SIZE*i, 0, LED_SIZE, 40);
+      if (data.EventType === "bufferUpdate") {
+        for(var i = 0; i < data.Data.length; i++) {
+          var led = data.Data[i];
+          canvasContext.fillStyle = 'rgb(' + Math.floor(255*led.Red) + ',' + Math.floor(255*led.Green) + ',' +  Math.floor(255*led.Blue) + ')';
+          canvasContext.fillRect(LED_SIZE*i, 0, LED_SIZE, 40);
+        }
       }
     } catch (e) {
       console.error("Parsing JSON: ", e);

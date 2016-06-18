@@ -27,10 +27,13 @@ func NewApiVisualizer(v Visualizer) *ApiVisualizer {
 
 func (l *LedManager) StartApi() {
 	router := httptreemux.New()
-	router.GET("/buffer", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	router.GET("/events", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
 		websocket.Handler(func(ws *websocket.Conn) {
-			for range time.Tick(100 * time.Millisecond) {
-				j, _ := json.Marshal(l.buffer)
+			eventListener, eventCloser := l.events.Listen()
+			defer close(eventCloser)
+			for {
+				data := <-eventListener
+				j, _ := json.Marshal(data)
 				_, err := ws.Write(j)
 				if err != nil {
 					break
@@ -78,6 +81,13 @@ func (l *LedManager) StartApi() {
 						return
 					} else {
 						// OK
+						l.events.Write(struct {
+							EventType    string
+							VisualizerId uint64
+						}{
+							"propertyChanged",
+							v.ID(),
+						})
 						return
 					}
 
@@ -86,6 +96,19 @@ func (l *LedManager) StartApi() {
 		}
 		w.WriteHeader(http.StatusNotFound)
 	})
+
+	// Generate bufferUpdate events
+	go func() {
+		for range time.Tick(100 * time.Millisecond) {
+			l.events.Write(struct {
+				EventType string
+				Data      []Led
+			}{
+				"bufferUpdate",
+				l.buffer,
+			})
+		}
+	}()
 
 	router.NotFoundHandler = http.FileServer(http.Dir("./web")).ServeHTTP
 	http.ListenAndServe(":8080", router)
