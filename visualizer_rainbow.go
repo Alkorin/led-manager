@@ -29,7 +29,9 @@ func (v *RainbowVisualizer) Start() {
 		j += v.Speed / 100
 		for i := 0; i < v.length; i++ {
 			r, g, b := hueToRGB(j + float64(i)/128.0)
-			d[i] = Led{r * v.Luminosity, g * v.Luminosity, b * v.Luminosity, 0}
+			d[i].Red = r * v.Luminosity
+			d[i].Green = g * v.Luminosity
+			d[i].Blue = b * v.Luminosity
 		}
 		v.SendData(d)
 	}
