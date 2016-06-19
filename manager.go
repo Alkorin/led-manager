@@ -11,12 +11,12 @@ type LedManager struct {
 
 	renderers   []Renderer
 	visualizers []Visualizer
-	events      *broadcaster.Broadcaster
+	apiEvents   *broadcaster.Broadcaster
 }
 
 func NewLedManager() *LedManager {
 	return &LedManager{
-		events: broadcaster.NewBroadcaster(),
+		apiEvents: broadcaster.NewBroadcaster(),
 	}
 }
 

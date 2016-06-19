@@ -11,25 +11,11 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type ApiVisualizer struct {
-	Name       string                        `json:"name"`
-	ID         uint64                        `json:"id"`
-	Properties map[string]VisualizerProperty `json:"properties"`
-}
-
-func NewApiVisualizer(v Visualizer) *ApiVisualizer {
-	return &ApiVisualizer{
-		Name:       v.Name(),
-		ID:         v.ID(),
-		Properties: GetVisualizerProperties(v),
-	}
-}
-
 func (l *LedManager) StartApi() {
 	router := httptreemux.New()
 	router.GET("/events", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
 		websocket.Handler(func(ws *websocket.Conn) {
-			eventListener, eventCloser := l.events.Listen()
+			eventListener, eventCloser := l.apiEvents.Listen()
 			defer close(eventCloser)
 			for {
 				data := <-eventListener
@@ -81,16 +67,9 @@ func (l *LedManager) StartApi() {
 						return
 					} else {
 						// OK
-						l.events.Write(struct {
-							EventType    string
-							VisualizerId uint64
-						}{
-							"propertyChanged",
-							v.ID(),
-						})
+						l.apiEvents.Write(NewApiVisualizerPropertiesChangedEvent(v.ID()))
 						return
 					}
-
 				}
 			}
 		}
@@ -100,16 +79,11 @@ func (l *LedManager) StartApi() {
 	// Generate bufferUpdate events
 	go func() {
 		for range time.Tick(100 * time.Millisecond) {
-			l.events.Write(struct {
-				EventType string
-				Data      []Led
-			}{
-				"bufferUpdate",
-				l.buffer,
-			})
+			l.apiEvents.Write(NewApiBufferEvent(l.buffer))
 		}
 	}()
 
+	// Default: server static files
 	router.NotFoundHandler = http.FileServer(http.Dir("./web")).ServeHTTP
 	http.ListenAndServe(":8080", router)
 }
