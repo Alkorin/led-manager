@@ -28,6 +28,8 @@
           canvasContext.fillStyle = 'rgb(' + Math.floor(255*led.Red) + ',' + Math.floor(255*led.Green) + ',' +  Math.floor(255*led.Blue) + ')';
           canvasContext.fillRect(LED_SIZE*i, 0, LED_SIZE, 40);
         }
+      } else if (data.EventType == 'visualizerPropertiesChanged') {
+        updateVisualizer(data.VisualizerId)
       }
     } catch (e) {
       console.error("Parsing JSON: ", e);
@@ -45,6 +47,7 @@
           for(var j in v.properties) {
             var property = v.properties[j];
             var input = $('<input>').attr({
+              id: 'Visualizer-' + v.id + '-Property-' + j,
               type: 'range',
               min: 0,
               max: 1,
@@ -73,6 +76,16 @@
     });
   }
 
+  function updateVisualizer(visualizerId) {
+    $.getJSON('api/visualizer/'+visualizerId, function (response) {
+      if (response.properties) {
+        for (propertyName in response.properties) {
+          var property = response.properties[propertyName];
+          $('#Visualizer-' + response.id + '-Property-' + propertyName).val(property.value)
+        }
+      }
+    });
+  }
 </script>
 <style>
   .visualizer {
