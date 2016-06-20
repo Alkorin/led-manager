@@ -53,7 +53,7 @@
               max: 1,
               step: 0.01,
               value: property.value,
-            }).change(function(visualizerId, propertyName) {
+            }).on("input change click", function(visualizerId, propertyName) {
               return function() {
                 var data = {};
                 data[propertyName] = parseFloat($(this).val());
@@ -81,7 +81,10 @@
       if (response.properties) {
         for (propertyName in response.properties) {
           var property = response.properties[propertyName];
-          $('#Visualizer-' + response.id + '-Property-' + propertyName).val(property.value)
+          var input = $('#Visualizer-' + response.id + '-Property-' + propertyName);
+          if (!input.is(':active')) {
+            input.val(property.value)
+          }
         }
       }
     });
