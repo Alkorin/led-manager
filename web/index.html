@@ -46,12 +46,14 @@
           var ul = $('<ul></ul>');
           for(var j in v.properties) {
             var property = v.properties[j];
+            var min = (property.min ? property.min : 0);
+            var max = (property.max ? property.max : 1);
             var input = $('<input>').attr({
               id: 'Visualizer-' + v.id + '-Property-' + j,
               type: 'range',
-              min: 0,
-              max: 1,
-              step: 0.01,
+              min: min,
+              max: max,
+              step: (max-min)/100,
               value: property.value,
             }).on("input change click", function(visualizerId, propertyName) {
               return function() {

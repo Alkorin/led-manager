@@ -9,7 +9,7 @@ type RainbowVisualizer struct {
 
 	length int
 
-	Speed      float64 `property:"rw"`
+	Speed      float64 `property:"rw,min=0,max=0.02"`
 	Luminosity float64 `property:"rw"`
 }
 
@@ -17,7 +17,7 @@ func NewRainbowVisualizer(length int) *RainbowVisualizer {
 	return &RainbowVisualizer{
 		BaseVisualizer: *NewBaseVisualizer("Rainbow"),
 		length:         length,
-		Speed:          0.5,
+		Speed:          0.005,
 		Luminosity:     1.0,
 	}
 }
@@ -26,7 +26,7 @@ func (v *RainbowVisualizer) Start() {
 	d := make([]Led, v.length)
 	j := 0.0
 	for range time.Tick(10 * time.Millisecond) {
-		j += v.Speed / 100
+		j += v.Speed
 		for i := 0; i < v.length; i++ {
 			r, g, b := hueToRGB(j + float64(i)/128.0)
 			d[i].Red = r * v.Luminosity

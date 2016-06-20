@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 )
 
 var visualizerIdCounter uint64 = 0
@@ -21,6 +23,8 @@ type Visualizer interface {
 type VisualizerProperty struct {
 	Value    interface{} `json:"value"`
 	TypeName string      `json:"type"`
+	Min      *float64    `json:"min"`
+	Max      *float64    `json:"max"`
 	object   reflect.Value
 }
 
@@ -33,10 +37,30 @@ func GetVisualizerProperties(v Visualizer) map[string]VisualizerProperty {
 		fieldType := value.Type().Field(i)
 		if property := fieldType.Tag.Get("property"); property != "" {
 			fieldValue := value.Field(i)
+
+			var min *float64
+			var max *float64
+			// Scan tag opts
+			for _, opt := range strings.Split(property, ",") {
+				if strings.HasPrefix(opt, "min=") {
+					value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "min="), 64)
+					if err == nil {
+						min = &value
+					}
+				} else if strings.HasPrefix(opt, "max=") {
+					value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "max="), 64)
+					if err == nil {
+						max = &value
+					}
+				}
+			}
+
 			if fieldValue.CanInterface() {
 				properties[fieldType.Name] = VisualizerProperty{
 					Value:    fieldValue.Interface(),
 					TypeName: fieldType.Type.Name(),
+					Min:      min,
+					Max:      max,
 					object:   fieldValue,
 				}
 			}
