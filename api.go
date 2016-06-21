@@ -78,7 +78,7 @@ func (l *LedManager) StartApi() {
 
 	// Generate bufferUpdate events
 	go func() {
-		for range time.Tick(100 * time.Millisecond) {
+		for range time.Tick(40 * time.Millisecond) {
 			l.apiEvents.Write(NewApiBufferEvent(l.buffer))
 		}
 	}()
