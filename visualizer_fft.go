@@ -92,6 +92,10 @@ func (v *FFTVisualizer) Run() {
 		return
 	}
 
+	// Compute Hann window
+	hann := window.Hann(v.samplesPerFFT)
+
+	// Allocate buffers
 	vRead := make([]int16, v.samplesPerFrame)
 	vFloat := make([]float64, v.samplesPerFFT)
 	vFFT := make([]float64, v.samplesPerFFT)
@@ -116,8 +120,10 @@ func (v *FFTVisualizer) Run() {
 		// Copy vFloat to vFFT for FFT processing as hanning window is done in-place
 		copy(vFFT, vFloat)
 
-		// Apply a Hanning window
-		window.Apply(vFFT, window.Hann)
+		// Apply a Hann window
+		for i, w := range hann {
+			vFFT[i] *= w
+		}
 
 		// Do FFT on those values
 		f := fft.FFTReal(vFFT)
