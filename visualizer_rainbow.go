@@ -25,6 +25,10 @@ func NewRainbowVisualizer(length int) *RainbowVisualizer {
 }
 
 func (v *RainbowVisualizer) Start() {
+	go v.Run()
+}
+
+func (v *RainbowVisualizer) Run() {
 	d := make([]Led, v.length)
 	j := 0.0
 	for range time.Tick(10 * time.Millisecond) {

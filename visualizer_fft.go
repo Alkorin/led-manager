@@ -82,6 +82,10 @@ func (v *FFTVisualizer) startPulseAudio() (io.ReadCloser, io.ReadCloser, error) 
 }
 
 func (v *FFTVisualizer) Start() {
+	go v.Run()
+}
+
+func (v *FFTVisualizer) Run() {
 	data, stderr, err := v.startPulseAudio()
 	if err != nil {
 		log.Printf("FFTVisualizer: error while startPulseAudio: %q", err.Error())
