@@ -2,7 +2,18 @@
 <html>
 <meta charset="utf-8" />
 <title>Led Manager</title>
+<link type="text/css" rel="stylesheet" href="jquery-wheelcolorpicker/css/wheelcolorpicker.css" />
+<style>
+  .jQWCP-wWidget {
+    width: 120px;
+    height: 100px;
+  }
+  .jQWCP-wWheel {
+    background-size: 100% !important;
+  }
+</style>
 <script src="https://code.jquery.com/jquery-3.0.0.js" integrity="sha256-jrPLZ+8vDxt2FnE1zvZXCkCcebI/C8Dt5xyaQBjxQIo=" crossorigin="anonymous"></script>
+<script src="jquery-wheelcolorpicker/jquery.wheelcolorpicker.js"></script>
 <script language="javascript" type="text/javascript">
   const LED_SIZE = 5;
   var canvasContext;
@@ -27,7 +38,7 @@
   function onMessage(evt) {
     try {
       var data = JSON.parse(evt.data);
-      if (data.EventType === "bufferUpdate") {
+      if (data.EventType === 'bufferUpdate') {
         for(var i = 0; i < data.Data.length; i++) {
           var led = data.Data[i];
           canvasContext.fillStyle = 'rgb(' + Math.floor(255*led.Red) + ',' + Math.floor(255*led.Green) + ',' +  Math.floor(255*led.Blue) + ')';
@@ -37,41 +48,76 @@
         updateVisualizer(data.VisualizerId)
       }
     } catch (e) {
-      console.error("Parsing JSON: ", e);
+      console.error('Parsing JSON: ', e);
     }
   }
 
   function createVisualizers() {
-    $.getJSON("api/visualizer", function (response) {
+    $.getJSON('api/visualizer', function (response) {
       for(var i in response) {
         v = response[i];
         var div = $("#visualizer").clone().attr('id', 'visualizer-'+v.id);
         div.find("#visualizerTitle").html(v.name);
         if (v.properties) {
           var ul = $('<ul></ul>');
-          for(var j in v.properties) {
+          for (var j in v.properties) {
             var property = v.properties[j];
-            var min = (property.min ? property.min : 0);
-            var max = (property.max ? property.max : 1);
-            var input = $('<input>').attr({
-              id: 'Visualizer-' + v.id + '-Property-' + j,
-              type: 'range',
-              min: min,
-              max: max,
-              step: (max-min)/100,
-              value: property.value,
-            }).on("input change click", function(visualizerId, propertyName) {
-              return function() {
-                var data = {};
-                data[propertyName] = parseFloat($(this).val());
-                $.ajax({
-                  url: 'api/visualizer/'+visualizerId+'/properties',
-                  type: 'PUT',
-                  contentType: 'application/json',
-                  data: JSON.stringify(data),
+            var input;
+            switch (property.type) {
+              case 'ColorRGB':
+                var colorPicker = $('<input>').attr({
+                  id: 'Visualizer-' + v.id + '-Property-' + j,
+                  type: 'text',
                 });
-              }
-            }(v.id, j));
+                input = $('<div></div>').append(colorPicker);
+                colorPicker.wheelColorPicker({
+                  layout: 'block',
+                  sliders: 'wv',
+                  autoResize: false,
+                });
+                colorPicker.wheelColorPicker('setRgb', property.value.Red, property.value.Green, property.value.Blue);
+                colorPicker.on('slidermove', function(visualizerId, propertyName) {
+                  return function() {
+                    var color = $(this).wheelColorPicker('color');
+                    var data = {};
+                    data[propertyName] = {
+                      Red: color.r,
+                      Green: color.g,
+                      Blue: color.b,
+                    };
+                    $.ajax({
+                      url: 'api/visualizer/'+visualizerId+'/properties',
+                      type: 'PUT',
+                      contentType: 'application/json',
+                      data: JSON.stringify(data),
+                    });
+                  }
+                }(v.id, j));
+                break;
+              default:
+                var min = (property.min ? property.min : 0);
+                var max = (property.max ? property.max : 1);
+                input = $('<input>').attr({
+                  id: 'Visualizer-' + v.id + '-Property-' + j,
+                  type: 'range',
+                  min: min,
+                  max: max,
+                  step: (max-min)/100,
+                  value: property.value,
+                }).on("input change click", function(visualizerId, propertyName) {
+                  return function() {
+                    var data = {};
+                    data[propertyName] = parseFloat($(this).val());
+                    $.ajax({
+                      url: 'api/visualizer/'+visualizerId+'/properties',
+                      type: 'PUT',
+                      contentType: 'application/json',
+                      data: JSON.stringify(data),
+                    });
+                  }
+                }(v.id, j));
+                break;
+            }
             ul.append($('<li></li>').append($('<div>',{text:j})).append(input))
           }
           div.find("#visualizerProperties").append(ul);
@@ -79,7 +125,10 @@
         div.show();
         div.appendTo("#visualizers");
       }
-      $("#visualizers").show()
+      $("#visualizers").show();
+      $(".jQWCP-wWidget").wheelColorPicker('refreshWidget');
+      $(".jQWCP-wWidget").wheelColorPicker('redrawSliders');
+      $(".jQWCP-wWidget").wheelColorPicker('updateSliders');
     });
   }
 
@@ -90,7 +139,14 @@
           var property = response.properties[propertyName];
           var input = $('#Visualizer-' + response.id + '-Property-' + propertyName);
           if (!input.is(':active')) {
-            input.val(property.value)
+            switch (property.type) {
+              case 'ColorRGB':
+                input.wheelColorPicker('setRgb', property.value.Red, property.value.Green, property.value.Blue);
+                break;
+              default:
+                input.val(property.value);
+                break;
+            }
           }
         }
       }

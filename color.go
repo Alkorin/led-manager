@@ -4,6 +4,12 @@ import (
 	"math"
 )
 
+type ColorRGB struct {
+	Red   float64
+	Green float64
+	Blue  float64
+}
+
 func hueToRGB(h float64) (float64, float64, float64) {
 	_, h = math.Modf(h)
 	h *= 3.0

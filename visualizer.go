@@ -82,6 +82,23 @@ func SetVisualizerProperties(v Visualizer, data map[string]interface{}) error {
 			visualizerProperty.object.SetFloat(value.(float64))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			visualizerProperty.object.SetInt(int64(value.(float64)))
+		case reflect.Struct:
+			structValue, ok := value.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("invalid data for %q, received %+v", property, value)
+			}
+
+			for k, v := range structValue {
+				structField := visualizerProperty.object.FieldByName(k)
+				if !structField.IsValid() || !structField.CanSet() {
+					return fmt.Errorf("invalid data for %q: unknown field %q", property, k)
+				}
+				valueToSet := reflect.ValueOf(v)
+				if !valueToSet.Type().AssignableTo(structField.Type()) {
+					return fmt.Errorf("invalid data for %q: bad data for field %q: received %q, wanted %q", property, k, valueToSet.Type().Name(), structField.Type().Name())
+				}
+				structField.Set(reflect.ValueOf(v))
+			}
 		default:
 			return fmt.Errorf("unhandled property type: %q", visualizerProperty.object.Type().Kind().String())
 		}
