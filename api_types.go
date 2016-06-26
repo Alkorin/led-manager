@@ -2,6 +2,10 @@ package main
 
 import ()
 
+type ApiBuffer struct {
+	Size int `json:"size"`
+}
+
 type ApiVisualizer struct {
 	Name       string                        `json:"name"`
 	ID         uint64                        `json:"id"`

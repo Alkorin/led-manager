@@ -8,9 +8,14 @@
   var canvasContext;
 
   $( document ).ready(function() {
-    createVisualizers();
-    canvasContext = $("#canvas")[0].getContext('2d');
-    startBufferDisplay();
+    $.getJSON('api/buffer', function (response) {
+      // Update Canvas' size
+      $("#canvas")[0].width = response.size * LED_SIZE;
+      canvasContext = $("#canvas")[0].getContext('2d');
+
+      createVisualizers();
+      startBufferDisplay();
+    });
   });
 
   function startBufferDisplay() {

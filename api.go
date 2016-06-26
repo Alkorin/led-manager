@@ -27,6 +27,10 @@ func (l *LedManager) StartApi() {
 			}
 		}).ServeHTTP(w, r)
 	})
+	router.GET("/api/buffer", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+		j, _ := json.Marshal(ApiBuffer{Size: len(l.buffer)})
+		w.Write(j)
+	})
 	router.GET("/api/visualizer", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
 		m := make([]*ApiVisualizer, 0, len(l.visualizers))
 		for _, v := range l.visualizers {
