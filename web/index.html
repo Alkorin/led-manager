@@ -16,7 +16,7 @@
   function startBufferDisplay() {
     ws = new WebSocket('ws://thor.soete.org:8080/events');
     ws.onmessage = function(evt) { onMessage(evt) };
-    ws.onerror = function(evt) { console.error('WebSocket: ' + evt.data); };
+    ws.onerror = function(evt) { console.error('WebSocket: ' + evt.data); ws.close(); };
   }
 
   function onMessage(evt) {
