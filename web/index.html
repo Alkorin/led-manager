@@ -103,6 +103,8 @@
                     });
                   }
                 }(v.id, j));
+                colorPicker.on('sliderdown', function() { $(this).addClass('active'); });
+                colorPicker.on('sliderup', function() { $(this).removeClass('active'); });
                 break;
               default:
                 var min = (property.min ? property.min : 0);
@@ -148,15 +150,17 @@
         for (propertyName in response.properties) {
           var property = response.properties[propertyName];
           var input = $('#Visualizer-' + response.id + '-Property-' + propertyName);
-          if (!input.is(':active')) {
-            switch (property.type) {
-              case 'ColorRGB':
+          switch (property.type) {
+            case 'ColorRGB':
+              if (!input.is('.active')) {
                 input.wheelColorPicker('setRgb', property.value.Red, property.value.Green, property.value.Blue);
-                break;
-              default:
+              }
+              break;
+            default:
+              if (!input.is(':active')) {
                 input.val(property.value);
-                break;
-            }
+              }
+              break;
           }
         }
       }
