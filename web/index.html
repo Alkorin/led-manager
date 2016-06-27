@@ -25,26 +25,36 @@
       canvasContext = $("#canvas")[0].getContext('2d');
 
       createVisualizers();
-      startBufferDisplay();
+      listenBufferStream();
+      listenEvents();
     });
   });
 
-  function startBufferDisplay() {
-    ws = new WebSocket('ws://thor.soete.org:8080/events');
-    ws.onmessage = function(evt) { onMessage(evt) };
+  function listenBufferStream() {
+    ws = new WebSocket('ws://thor.soete.org:8080/buffer/stream');
+    ws.binaryType = 'arraybuffer';
+    ws.onmessage = function(evt) { onBufferMessage(evt) };
     ws.onerror = function(evt) { console.error('WebSocket: ' + evt.data); ws.close(); };
   }
 
-  function onMessage(evt) {
+  function onBufferMessage(evt) {
+    var data = new Uint8Array(evt.data);
+    for(var i = 0; i < data.length/3; i++) {
+      canvasContext.fillStyle = 'rgb(' + data[3*i+0] + ',' + data[3*i+1] + ',' +  data[3*i+2] + ')';
+      canvasContext.fillRect(LED_SIZE*i, 0, LED_SIZE, 10);
+    }
+  }
+
+  function listenEvents() {
+    ws = new WebSocket('ws://thor.soete.org:8080/events');
+    ws.onmessage = function(evt) { onEventMessage(evt) };
+    ws.onerror = function(evt) { console.error('WebSocket: ' + evt.data); ws.close(); };
+  }
+
+  function onEventMessage(evt) {
     try {
       var data = JSON.parse(evt.data);
-      if (data.EventType === 'bufferUpdate') {
-        for(var i = 0; i < data.Data.length; i++) {
-          var led = data.Data[i];
-          canvasContext.fillStyle = 'rgb(' + Math.floor(255*led.Red) + ',' + Math.floor(255*led.Green) + ',' +  Math.floor(255*led.Blue) + ')';
-          canvasContext.fillRect(LED_SIZE*i, 0, LED_SIZE, 40);
-        }
-      } else if (data.EventType == 'visualizerPropertiesChanged') {
+      if (data.EventType == 'visualizerPropertiesChanged') {
         updateVisualizer(data.VisualizerId)
       }
     } catch (e) {
@@ -170,7 +180,7 @@
 <div id="visualizers" style="display:none">
 </div>
 <div style="clear:both"></div>
-<canvas id="canvas" width="640" height="20" style="border:1px solid #d3d3d3;"></canvas>
+<canvas id="canvas" width="640" height="10" style="border:1px solid #d3d3d3;"></canvas>
 <div id="visualizer" class="visualizer" style="display:none;">
   <div id="visualizerTitle"></div>
   <div id="visualizerProperties"></div>

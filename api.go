@@ -31,6 +31,23 @@ func (l *LedManager) StartApi() {
 		j, _ := json.Marshal(ApiBuffer{Size: len(l.buffer)})
 		w.Write(j)
 	})
+	router.GET("/buffer/stream", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
+		websocket.Handler(func(ws *websocket.Conn) {
+			ws.PayloadType = websocket.BinaryFrame
+			data := make([]byte, 3*len(l.buffer))
+			for range time.Tick(40 * time.Millisecond) {
+				for i, color := range l.buffer {
+					data[3*i+0] = byte(255 * color.Red)
+					data[3*i+1] = byte(255 * color.Green)
+					data[3*i+2] = byte(255 * color.Blue)
+				}
+				_, err := ws.Write(data)
+				if err != nil {
+					break
+				}
+			}
+		}).ServeHTTP(w, r)
+	})
 	router.GET("/api/visualizer", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
 		m := make([]*ApiVisualizer, 0, len(l.visualizers))
 		for _, v := range l.visualizers {
@@ -79,13 +96,6 @@ func (l *LedManager) StartApi() {
 		}
 		w.WriteHeader(http.StatusNotFound)
 	})
-
-	// Generate bufferUpdate events
-	go func() {
-		for range time.Tick(40 * time.Millisecond) {
-			l.apiEvents.Write(NewApiBufferEvent(l.buffer))
-		}
-	}()
 
 	// Default: server static files
 	router.NotFoundHandler = http.FileServer(http.Dir("./web")).ServeHTTP
