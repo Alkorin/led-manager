@@ -106,7 +106,7 @@
                 colorPicker.on('sliderdown', function() { $(this).addClass('active'); });
                 colorPicker.on('sliderup', function() { $(this).removeClass('active'); });
                 break;
-              default:
+              case 'float64':
                 var min = (property.min ? property.min : 0);
                 var max = (property.max ? property.max : 1);
                 input = $('<input>').attr({
@@ -129,8 +129,44 @@
                   }
                 }(v.id, j));
                 break;
+              case 'string':
+                if (property.enum === null) {
+                  console.error("Unhandled naked string property: " + j)
+                }
+
+                var input = $('<select></select>').on("change", function(visualizerId, propertyName) {
+                  return function() {
+                    var data = {};
+                    data[propertyName] = $(this).val();
+                    $.ajax({
+                      url: 'api/visualizer/'+visualizerId+'/properties',
+                      type: 'PUT',
+                      contentType: 'application/json',
+                      data: JSON.stringify(data),
+                    });
+                  }
+                }(v.id, j));
+
+                for (var k in property.enum) {
+                  var s = $('<option></option>').attr({
+                    value: property.enum[k],
+                  });
+                  if (property.enum[k] === property.value) {
+                    s.attr({
+                      selected: 'selected',
+                    });
+                  }
+                  s.html(property.enum[k]);
+                  input.append(s);
+                }
+                break;
+              default:
+                console.error("Unhandled property type: " + property.type)
+                break;
             }
-            ul.append($('<li></li>').append($('<div>',{text:j})).append(input))
+            if (input !== null) {
+              ul.append($('<li></li>').append($('<div>',{text:j})).append(input));
+            }
           }
           div.find("#visualizerProperties").append(ul);
         }
