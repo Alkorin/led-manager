@@ -72,7 +72,7 @@
           var ul = $('<ul></ul>');
           for (var j in v.properties) {
             var property = v.properties[j];
-            var input;
+            var input = null;
             switch (property.type) {
               case 'ColorRGB':
                 var colorPicker = $('<input>').attr({
