@@ -23,8 +23,9 @@ type Visualizer interface {
 type VisualizerProperty struct {
 	Value    interface{} `json:"value"`
 	TypeName string      `json:"type"`
-	Min      *float64    `json:"min"`
-	Max      *float64    `json:"max"`
+	Min      *float64    `json:"min,omitempty"`
+	Max      *float64    `json:"max,omitempty"`
+	Enum     []string    `json:"enum,omitempty"`
 	object   reflect.Value
 }
 
@@ -38,29 +39,35 @@ func GetVisualizerProperties(v Visualizer) map[string]VisualizerProperty {
 		if property := fieldType.Tag.Get("property"); property != "" {
 			fieldValue := value.Field(i)
 
-			var min *float64
-			var max *float64
-			// Scan tag opts
-			for _, opt := range strings.Split(property, ",") {
-				if strings.HasPrefix(opt, "min=") {
-					value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "min="), 64)
-					if err == nil {
-						min = &value
-					}
-				} else if strings.HasPrefix(opt, "max=") {
-					value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "max="), 64)
-					if err == nil {
-						max = &value
+			if fieldValue.CanInterface() {
+				var min *float64
+				var max *float64
+				// Scan tag opts
+				for _, opt := range strings.Split(property, ",") {
+					if strings.HasPrefix(opt, "min=") {
+						value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "min="), 64)
+						if err == nil {
+							min = &value
+						}
+					} else if strings.HasPrefix(opt, "max=") {
+						value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "max="), 64)
+						if err == nil {
+							max = &value
+						}
 					}
 				}
-			}
 
-			if fieldValue.CanInterface() {
+				var enum []string
+				if enumProperty := fieldType.Tag.Get("enum"); enumProperty != "" {
+					enum = strings.Split(enumProperty, ",")
+				}
+
 				properties[fieldType.Name] = VisualizerProperty{
 					Value:    fieldValue.Interface(),
 					TypeName: fieldType.Type.Name(),
 					Min:      min,
 					Max:      max,
+					Enum:     enum,
 					object:   fieldValue,
 				}
 			}
@@ -82,6 +89,8 @@ func SetVisualizerProperties(v Visualizer, data map[string]interface{}) error {
 			visualizerProperty.object.SetFloat(value.(float64))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			visualizerProperty.object.SetInt(int64(value.(float64)))
+		case reflect.String:
+			visualizerProperty.object.SetString(value.(string))
 		case reflect.Struct:
 			structValue, ok := value.(map[string]interface{})
 			if !ok {
