@@ -21,6 +21,7 @@ type Visualizer interface {
 }
 
 type VisualizerProperty struct {
+	Name     string      `json:"name"`
 	Value    interface{} `json:"value"`
 	TypeName string      `json:"type"`
 	Min      *float64    `json:"min,omitempty"`
@@ -29,11 +30,11 @@ type VisualizerProperty struct {
 	object   reflect.Value
 }
 
-func GetVisualizerProperties(v Visualizer) map[string]VisualizerProperty {
+func GetVisualizerProperties(v Visualizer) []VisualizerProperty {
 	value := reflect.Indirect(reflect.ValueOf(v))
 
 	// Scan fields
-	properties := make(map[string]VisualizerProperty)
+	properties := []VisualizerProperty{}
 	for i := 0; i < value.Type().NumField(); i++ {
 		fieldType := value.Type().Field(i)
 		if property := fieldType.Tag.Get("property"); property != "" {
@@ -62,14 +63,15 @@ func GetVisualizerProperties(v Visualizer) map[string]VisualizerProperty {
 					enum = strings.Split(enumProperty, ",")
 				}
 
-				properties[fieldType.Name] = VisualizerProperty{
+				properties = append(properties, VisualizerProperty{
+					Name:     fieldType.Name,
 					Value:    fieldValue.Interface(),
 					TypeName: fieldType.Type.Name(),
 					Min:      min,
 					Max:      max,
 					Enum:     enum,
 					object:   fieldValue,
-				}
+				})
 			}
 		}
 	}
@@ -77,41 +79,43 @@ func GetVisualizerProperties(v Visualizer) map[string]VisualizerProperty {
 }
 
 func SetVisualizerProperties(v Visualizer, data map[string]interface{}) error {
-	properties := GetVisualizerProperties(v)
+	visualizerProperties := GetVisualizerProperties(v)
+PropertyLoop:
 	for property, value := range data {
-		visualizerProperty, ok := properties[property]
-		if !ok {
-			return fmt.Errorf("unknown property: %q", property)
-		}
+		for _, visualizerProperty := range visualizerProperties {
+			if visualizerProperty.Name == property {
+				switch visualizerProperty.object.Type().Kind() {
+				case reflect.Float32, reflect.Float64:
+					visualizerProperty.object.SetFloat(value.(float64))
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					visualizerProperty.object.SetInt(int64(value.(float64)))
+				case reflect.String:
+					visualizerProperty.object.SetString(value.(string))
+				case reflect.Struct:
+					structValue, ok := value.(map[string]interface{})
+					if !ok {
+						return fmt.Errorf("invalid data for %q, received %+v", property, value)
+					}
 
-		switch visualizerProperty.object.Type().Kind() {
-		case reflect.Float32, reflect.Float64:
-			visualizerProperty.object.SetFloat(value.(float64))
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			visualizerProperty.object.SetInt(int64(value.(float64)))
-		case reflect.String:
-			visualizerProperty.object.SetString(value.(string))
-		case reflect.Struct:
-			structValue, ok := value.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("invalid data for %q, received %+v", property, value)
-			}
-
-			for k, v := range structValue {
-				structField := visualizerProperty.object.FieldByName(k)
-				if !structField.IsValid() || !structField.CanSet() {
-					return fmt.Errorf("invalid data for %q: unknown field %q", property, k)
+					for k, v := range structValue {
+						structField := visualizerProperty.object.FieldByName(k)
+						if !structField.IsValid() || !structField.CanSet() {
+							return fmt.Errorf("invalid data for %q: unknown field %q", property, k)
+						}
+						valueToSet := reflect.ValueOf(v)
+						if !valueToSet.Type().AssignableTo(structField.Type()) {
+							return fmt.Errorf("invalid data for %q: bad data for field %q: received %q, wanted %q", property, k, valueToSet.Type().Name(), structField.Type().Name())
+						}
+						structField.Set(reflect.ValueOf(v))
+					}
+				default:
+					return fmt.Errorf("unhandled property type: %q", visualizerProperty.object.Type().Kind().String())
 				}
-				valueToSet := reflect.ValueOf(v)
-				if !valueToSet.Type().AssignableTo(structField.Type()) {
-					return fmt.Errorf("invalid data for %q: bad data for field %q: received %q, wanted %q", property, k, valueToSet.Type().Name(), structField.Type().Name())
-				}
-				structField.Set(reflect.ValueOf(v))
+				v.OnPropertyChanged(property)
+				continue PropertyLoop
 			}
-		default:
-			return fmt.Errorf("unhandled property type: %q", visualizerProperty.object.Type().Kind().String())
 		}
-		v.OnPropertyChanged(property)
+		return fmt.Errorf("unknown property: %q", property)
 	}
 	return nil
 }

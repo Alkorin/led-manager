@@ -10,9 +10,9 @@ type GradientVisualizer struct {
 	BaseVisualizer
 
 	length        int
+	Interpolation string   `property:"rw" enum:"RGB,HSV+,HSV-"`
 	StartColor    ColorRGB `property:"rw"`
 	EndColor      ColorRGB `property:"rw"`
-	Interpolation string   `property:"rw" enum:"RGB,HSV+,HSV-"`
 }
 
 func NewGradientVisualizer(length int, start, end ColorRGB) *GradientVisualizer {

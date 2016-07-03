@@ -102,7 +102,7 @@
                       data: JSON.stringify(data),
                     });
                   }
-                }(v.id, j));
+                }(v.id, property.name));
                 colorPicker.on('sliderdown', function() { $(this).addClass('active'); });
                 colorPicker.on('sliderup', function() { $(this).removeClass('active'); });
                 break;
@@ -127,7 +127,7 @@
                       data: JSON.stringify(data),
                     });
                   }
-                }(v.id, j));
+                }(v.id, property.name));
                 break;
               case 'string':
                 if (property.enum === null) {
@@ -145,7 +145,7 @@
                       data: JSON.stringify(data),
                     });
                   }
-                }(v.id, j));
+                }(v.id, property.name));
 
                 for (var k in property.enum) {
                   var s = $('<option></option>').attr({
@@ -165,7 +165,7 @@
                 break;
             }
             if (input !== null) {
-              ul.append($('<li></li>').append($('<div>',{text:j})).append(input));
+              ul.append($('<li></li>').append($('<div>',{text:property.name})).append(input));
             }
           }
           div.find("#visualizerProperties").append(ul);
