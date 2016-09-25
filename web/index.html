@@ -106,6 +106,29 @@
                 colorPicker.on('sliderdown', function() { $(this).addClass('active'); });
                 colorPicker.on('sliderup', function() { $(this).removeClass('active'); });
                 break;
+              case 'int':
+                var min = (property.min ? property.min : 0);
+                var max = (property.max ? property.max : 10);
+                input = $('<input>').attr({
+                  id: 'Visualizer-' + v.id + '-Property-' + j,
+                  type: 'range',
+                  min: min,
+                  max: max,
+                  step: 1,
+                  value: property.value,
+                }).on("input change click", function(visualizerId, propertyName) {
+                  return function() {
+                    var data = {};
+                    data[propertyName] = parseFloat($(this).val());
+                    $.ajax({
+                      url: 'api/visualizer/'+visualizerId+'/properties',
+                      type: 'PUT',
+                      contentType: 'application/json',
+                      data: JSON.stringify(data),
+                    });
+                  }
+                }(v.id, property.name));
+                break;
               case 'float64':
                 var min = (property.min ? property.min : 0);
                 var max = (property.max ? property.max : 1);
