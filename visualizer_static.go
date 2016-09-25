@@ -6,19 +6,15 @@ type StaticColorVisualizer struct {
 	BaseVisualizer
 
 	length int
-	Red    float64 `property:"rw"`
-	Green  float64 `property:"rw"`
-	Blue   float64 `property:"rw"`
-	White  float64 `property:"rw"`
+	Color  ColorRGB `property:"rw"`
+	White  float64  `property:"rw"`
 }
 
 func NewStaticColorVisualizer(length int, color Led) *StaticColorVisualizer {
 	return &StaticColorVisualizer{
 		BaseVisualizer: *NewBaseVisualizer("StaticColor"),
 		length:         length,
-		Red:            color.Red,
-		Green:          color.Green,
-		Blue:           color.Blue,
+		Color:          ColorRGB{color.Red, color.Green, color.Blue},
 		White:          color.White,
 	}
 }
@@ -33,7 +29,7 @@ func (v *StaticColorVisualizer) OnPropertyChanged(string) {
 
 func (v *StaticColorVisualizer) SendColor() {
 	d := make([]Led, v.length)
-	color := Led{v.Red, v.Green, v.Blue, v.White}
+	color := Led{v.Color.Red, v.Color.Green, v.Color.Blue, v.White}
 	for i := range d {
 		d[i] = color
 	}
