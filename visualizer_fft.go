@@ -19,6 +19,8 @@ type FFTVisualizer struct {
 	BaseVisualizer
 
 	Luminosity float64 `property:"rw"`
+	LowHue     float64 `property:"rw"`
+	HighHue    float64 `property:"rw"`
 
 	palette []Led
 	cmd     *exec.Cmd
@@ -32,9 +34,12 @@ type FFTVisualizer struct {
 
 func NewFFTVisualizer(pulseAudioDevice string, pulseAudioOpts []string) *FFTVisualizer {
 	v := FFTVisualizer{
-		BaseVisualizer:   *NewBaseVisualizer("FFT"),
-		palette:          make([]Led, FFT_PALETTE_SIZE),
-		Luminosity:       1.0,
+		BaseVisualizer: *NewBaseVisualizer("FFT"),
+		palette:        make([]Led, FFT_PALETTE_SIZE),
+		Luminosity:     1.0,
+		LowHue:         1.0 / 3.0,
+		HighHue:        0,
+
 		samplesPerFrame:  512,
 		samplesPerFFT:    4096,
 		pulseAudioDevice: pulseAudioDevice,
@@ -49,15 +54,17 @@ func NewFFTVisualizer(pulseAudioDevice string, pulseAudioOpts []string) *FFTVisu
 
 func (v *FFTVisualizer) OnPropertyChanged(propertyName string) {
 	switch propertyName {
-	case "Luminosity":
+	case "Luminosity", "LowHue", "HighHue":
 		v.generatePalette()
 	}
 }
 
 func (v *FFTVisualizer) generatePalette() {
 	l := v.Luminosity
+	startHue := v.LowHue
+	stepHue := (v.HighHue - v.LowHue) / 768.0
 	for i := 0; i < FFT_PALETTE_SIZE; i++ {
-		r, g, b := hueToRGB(1.0/3.0 - (float64(i)/768.0)/3.0)
+		r, g, b := hueToRGB(startHue + float64(i)*stepHue)
 		v.palette[i].Red = r * (float64(i) / FFT_PALETTE_SIZE) * l
 		v.palette[i].Green = g * (float64(i) / FFT_PALETTE_SIZE) * l
 		v.palette[i].Blue = b * (float64(i) / FFT_PALETTE_SIZE) * l
