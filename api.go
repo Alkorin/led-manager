@@ -96,6 +96,27 @@ func (l *LedManager) StartApi() {
 		}
 		w.WriteHeader(http.StatusNotFound)
 	})
+	router.GET("/api/renderer", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+		m := make([]*ApiRenderer, 0, len(l.renderers))
+		for _, v := range l.renderers {
+			m = append(m, NewApiRenderer(v))
+		}
+		j, _ := json.Marshal(m)
+		w.Write(j)
+	})
+	router.GET("/api/renderer/:id", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
+		ID, err := strconv.ParseUint(params["id"], 10, 64)
+		if err == nil {
+			for _, v := range l.renderers {
+				if ID == v.ID() {
+					j, _ := json.Marshal(NewApiRenderer(v))
+					w.Write(j)
+					return
+				}
+			}
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
 
 	// Default: server static files
 	router.NotFoundHandler = http.FileServer(http.Dir("./web")).ServeHTTP

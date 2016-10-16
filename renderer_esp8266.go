@@ -26,7 +26,7 @@ func NewEsp8266Renderer(size int, dest string, reverse bool) *Esp8266Renderer {
 	conn, _ := net.ListenUDP("udp", saddr)
 
 	return &Esp8266Renderer{
-		SingleRenderer: *NewSingleRenderer(size),
+		SingleRenderer: *NewSingleRenderer(size, "Esp8266"),
 		buffer:         make([]byte, 4*size),
 		conn:           conn,
 		destAddr:       destAddr,

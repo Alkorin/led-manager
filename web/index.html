@@ -25,6 +25,7 @@
       canvasContext = $("#canvas")[0].getContext('2d');
 
       createVisualizers();
+      createRenderers();
       listenBufferStream();
       listenEvents();
     });
@@ -203,6 +204,19 @@
     });
   }
 
+  function createRenderers() {
+    $.getJSON('api/renderer', function (response) {
+      for(var i in response) {
+        v = response[i];
+        var div = $("#renderer").clone().attr('id', 'renderer-'+v.id);
+        div.find("#rendererTitle").html(v.name);
+        div.show();
+        div.appendTo("#renderers");
+      }
+      $("#renderers").show();
+    });
+  }
+
   function updateVisualizer(visualizerId) {
     $.getJSON('api/visualizer/'+visualizerId, function (response) {
       if (response.properties) {
@@ -237,6 +251,16 @@
     width: 100%;
     text-align: center;
   }
+  .renderer {
+    width: 200px;
+    margin: 5px;
+    float: left;
+    border: 1px solid #888880;
+  }
+  #rendererTitle {
+    width: 100%;
+    text-align: center;
+  }
 </style>
 <body>
 <h2>LedManager - UI</h2>
@@ -244,9 +268,15 @@
 </div>
 <div style="clear:both"></div>
 <canvas id="canvas" width="640" height="10" style="border:1px solid #d3d3d3;"></canvas>
+<div style="clear:both"></div>
+<div id="renderers" style="display:none">
 <div id="visualizer" class="visualizer" style="display:none;">
   <div id="visualizerTitle"></div>
   <div id="visualizerProperties"></div>
+</div>
+<div id="renderer" class="renderer" style="display:none;">
+  <div id="rendererTitle"></div>
+  <div id="rendererProperties"></div>
 </div>
 </body>
 </html>

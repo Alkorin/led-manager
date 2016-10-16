@@ -20,6 +20,18 @@ func NewApiVisualizer(v Visualizer) *ApiVisualizer {
 	}
 }
 
+type ApiRenderer struct {
+	Name string `json:"name"`
+	ID   uint64 `json:"id"`
+}
+
+func NewApiRenderer(r Renderer) *ApiRenderer {
+	return &ApiRenderer{
+		Name: r.Name(),
+		ID:   r.ID(),
+	}
+}
+
 type ApiEvent struct {
 	EventType string
 }

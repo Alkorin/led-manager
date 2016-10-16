@@ -8,9 +8,9 @@ type SingleRenderer struct {
 	size int
 }
 
-func NewSingleRenderer(size int) *SingleRenderer {
+func NewSingleRenderer(size int, name string) *SingleRenderer {
 	return &SingleRenderer{
-		BaseRenderer: *NewBaseRenderer(),
+		BaseRenderer: *NewBaseRenderer(name),
 		size:         size,
 	}
 }

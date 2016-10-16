@@ -11,7 +11,7 @@ type TerminalRenderer struct {
 
 func NewTerminalRenderer(size int) *TerminalRenderer {
 	return &TerminalRenderer{
-		SingleRenderer: *NewSingleRenderer(size),
+		SingleRenderer: *NewSingleRenderer(size, "Terminal"),
 	}
 }
 

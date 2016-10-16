@@ -8,4 +8,8 @@ type Renderer interface {
 	Size() []int
 	SetGetters([]getterFunc)
 	Start()
+
+	// Methods for API
+	ID() uint64
+	Name() string
 }
