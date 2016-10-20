@@ -57,10 +57,138 @@
       var data = JSON.parse(evt.data);
       if (data.EventType == 'visualizerPropertiesChanged') {
         updateVisualizer(data.VisualizerId)
+      } else if (data.EventType == 'rendererPropertiesChanged') {
+        updateRenderer(data.RendererId)
       }
     } catch (e) {
       console.error('Parsing JSON: ', e);
     }
+  }
+
+  function createProperties(objectType, id, properties) {
+    var ul = $('<ul></ul>');
+    for (var j in properties) {
+      var property = properties[j];
+      var input = null;
+      switch (property.type) {
+        case 'ColorRGB':
+          var colorPicker = $('<input>').attr({
+            id: objectType + '-' + id + '-Property-' + j,
+            type: 'text',
+          });
+          input = $('<div></div>').append(colorPicker);
+          colorPicker.wheelColorPicker({
+            layout: 'block',
+            sliders: 'wv',
+            autoResize: false,
+          });
+          colorPicker.wheelColorPicker('setRgb', property.value.Red, property.value.Green, property.value.Blue);
+          colorPicker.on('slidermove', function(id, propertyName) {
+            return function() {
+              var color = $(this).wheelColorPicker('color');
+              var data = {};
+              data[propertyName] = {
+                Red: color.r,
+                Green: color.g,
+                Blue: color.b,
+              };
+              $.ajax({
+                url: 'api/' + objectType + '/' + id + '/properties',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+              });
+            }
+          }(id, property.name));
+          colorPicker.on('sliderdown', function() { $(this).addClass('active'); });
+          colorPicker.on('sliderup', function() { $(this).removeClass('active'); });
+          break;
+        case 'int':
+          var min = (property.min ? property.min : 0);
+          var max = (property.max ? property.max : 10);
+          input = $('<input>').attr({
+            id: objectType + '-' + id + '-Property-' + j,
+            type: 'range',
+            min: min,
+            max: max,
+            step: 1,
+            value: property.value,
+          }).on("input change click", function(id, propertyName) {
+            return function() {
+              var data = {};
+              data[propertyName] = parseFloat($(this).val());
+              $.ajax({
+                url: 'api/' + objectType + '/' + id + '/properties',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+              });
+            }
+          }(id, property.name));
+          break;
+        case 'float64':
+          var min = (property.min ? property.min : 0);
+          var max = (property.max ? property.max : 1);
+          input = $('<input>').attr({
+            id: objectType + '-' + id + '-Property-' + j,
+            type: 'range',
+            min: min,
+            max: max,
+            step: (max-min)/100,
+            value: property.value,
+          }).on("input change click", function(id, propertyName) {
+            return function() {
+              var data = {};
+              data[propertyName] = parseFloat($(this).val());
+              $.ajax({
+                url: 'api/' + objectType + '/' + id + '/properties',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+              });
+            }
+          }(id, property.name));
+          break;
+        case 'string':
+          if (property.enum === null) {
+            console.error("Unhandled naked string property: " + j)
+          }
+
+          var input = $('<select></select>').on("change", function(id, propertyName) {
+            return function() {
+              var data = {};
+              data[propertyName] = $(this).val();
+              $.ajax({
+                url: 'api/' + objectType + '/' + id + '/properties',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+              });
+            }
+          }(id, property.name));
+
+          for (var k in property.enum) {
+            var s = $('<option></option>').attr({
+              value: property.enum[k],
+            });
+            if (property.enum[k] === property.value) {
+              s.attr({
+                selected: 'selected',
+              });
+            }
+            s.html(property.enum[k]);
+            input.append(s);
+          }
+          break;
+        default:
+          console.error("Unhandled property type: " + property.type)
+          break;
+      }
+      if (input !== null) {
+        ul.append($('<li></li>').append($('<div>',{text:property.name})).append(input));
+      }
+    }
+    return ul;
   }
 
   function createVisualizers() {
@@ -70,129 +198,7 @@
         var div = $("#visualizer").clone().attr('id', 'visualizer-'+v.id);
         div.find("#visualizerTitle").html(v.name);
         if (v.properties) {
-          var ul = $('<ul></ul>');
-          for (var j in v.properties) {
-            var property = v.properties[j];
-            var input = null;
-            switch (property.type) {
-              case 'ColorRGB':
-                var colorPicker = $('<input>').attr({
-                  id: 'Visualizer-' + v.id + '-Property-' + j,
-                  type: 'text',
-                });
-                input = $('<div></div>').append(colorPicker);
-                colorPicker.wheelColorPicker({
-                  layout: 'block',
-                  sliders: 'wv',
-                  autoResize: false,
-                });
-                colorPicker.wheelColorPicker('setRgb', property.value.Red, property.value.Green, property.value.Blue);
-                colorPicker.on('slidermove', function(visualizerId, propertyName) {
-                  return function() {
-                    var color = $(this).wheelColorPicker('color');
-                    var data = {};
-                    data[propertyName] = {
-                      Red: color.r,
-                      Green: color.g,
-                      Blue: color.b,
-                    };
-                    $.ajax({
-                      url: 'api/visualizer/'+visualizerId+'/properties',
-                      type: 'PUT',
-                      contentType: 'application/json',
-                      data: JSON.stringify(data),
-                    });
-                  }
-                }(v.id, property.name));
-                colorPicker.on('sliderdown', function() { $(this).addClass('active'); });
-                colorPicker.on('sliderup', function() { $(this).removeClass('active'); });
-                break;
-              case 'int':
-                var min = (property.min ? property.min : 0);
-                var max = (property.max ? property.max : 10);
-                input = $('<input>').attr({
-                  id: 'Visualizer-' + v.id + '-Property-' + j,
-                  type: 'range',
-                  min: min,
-                  max: max,
-                  step: 1,
-                  value: property.value,
-                }).on("input change click", function(visualizerId, propertyName) {
-                  return function() {
-                    var data = {};
-                    data[propertyName] = parseFloat($(this).val());
-                    $.ajax({
-                      url: 'api/visualizer/'+visualizerId+'/properties',
-                      type: 'PUT',
-                      contentType: 'application/json',
-                      data: JSON.stringify(data),
-                    });
-                  }
-                }(v.id, property.name));
-                break;
-              case 'float64':
-                var min = (property.min ? property.min : 0);
-                var max = (property.max ? property.max : 1);
-                input = $('<input>').attr({
-                  id: 'Visualizer-' + v.id + '-Property-' + j,
-                  type: 'range',
-                  min: min,
-                  max: max,
-                  step: (max-min)/100,
-                  value: property.value,
-                }).on("input change click", function(visualizerId, propertyName) {
-                  return function() {
-                    var data = {};
-                    data[propertyName] = parseFloat($(this).val());
-                    $.ajax({
-                      url: 'api/visualizer/'+visualizerId+'/properties',
-                      type: 'PUT',
-                      contentType: 'application/json',
-                      data: JSON.stringify(data),
-                    });
-                  }
-                }(v.id, property.name));
-                break;
-              case 'string':
-                if (property.enum === null) {
-                  console.error("Unhandled naked string property: " + j)
-                }
-
-                var input = $('<select></select>').on("change", function(visualizerId, propertyName) {
-                  return function() {
-                    var data = {};
-                    data[propertyName] = $(this).val();
-                    $.ajax({
-                      url: 'api/visualizer/'+visualizerId+'/properties',
-                      type: 'PUT',
-                      contentType: 'application/json',
-                      data: JSON.stringify(data),
-                    });
-                  }
-                }(v.id, property.name));
-
-                for (var k in property.enum) {
-                  var s = $('<option></option>').attr({
-                    value: property.enum[k],
-                  });
-                  if (property.enum[k] === property.value) {
-                    s.attr({
-                      selected: 'selected',
-                    });
-                  }
-                  s.html(property.enum[k]);
-                  input.append(s);
-                }
-                break;
-              default:
-                console.error("Unhandled property type: " + property.type)
-                break;
-            }
-            if (input !== null) {
-              ul.append($('<li></li>').append($('<div>',{text:property.name})).append(input));
-            }
-          }
-          div.find("#visualizerProperties").append(ul);
+          div.find("#visualizerProperties").append(createProperties('visualizer', v.id, v.properties));
         }
         div.show();
         div.appendTo("#visualizers");
@@ -210,6 +216,9 @@
         v = response[i];
         var div = $("#renderer").clone().attr('id', 'renderer-'+v.id);
         div.find("#rendererTitle").html(v.name);
+        if (v.properties) {
+          div.find("#rendererProperties").append(createProperties('renderer', v.id, v.properties));
+        }
         div.show();
         div.appendTo("#renderers");
       }
@@ -222,7 +231,29 @@
       if (response.properties) {
         for (propertyName in response.properties) {
           var property = response.properties[propertyName];
-          var input = $('#Visualizer-' + response.id + '-Property-' + propertyName);
+          var input = $('#visualizer-' + response.id + '-Property-' + propertyName);
+          switch (property.type) {
+            case 'ColorRGB':
+              if (!input.is('.active')) {
+                input.wheelColorPicker('setRgb', property.value.Red, property.value.Green, property.value.Blue);
+              }
+              break;
+            default:
+              if (!input.is(':active')) {
+                input.val(property.value);
+              }
+              break;
+          }
+        }
+      }
+    });
+  }
+  function updateRenderer(rendererId) {
+    $.getJSON('api/renderer/'+rendererId, function (response) {
+      if (response.properties) {
+        for (propertyName in response.properties) {
+          var property = response.properties[propertyName];
+          var input = $('#renderer-' + response.id + '-Property-' + propertyName);
           switch (property.type) {
             case 'ColorRGB':
               if (!input.is('.active')) {

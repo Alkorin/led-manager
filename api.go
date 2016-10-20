@@ -117,6 +117,33 @@ func (l *LedManager) StartApi() {
 		}
 		w.WriteHeader(http.StatusNotFound)
 	})
+	router.PUT("/api/renderer/:id/properties", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
+		ID, err := strconv.ParseUint(params["id"], 10, 64)
+		if err == nil {
+			for _, v := range l.renderers {
+				if ID == v.ID() {
+					body, _ := ioutil.ReadAll(r.Body)
+					data := map[string]interface{}{}
+					err := json.Unmarshal(body, &data)
+					if err != nil {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte(err.Error()))
+						return
+					}
+					if err := SetProperties(v, data); err != nil {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte(err.Error()))
+						return
+					} else {
+						// OK
+						l.apiEvents.Write(NewApiRendererPropertiesChangedEvent(v.ID()))
+						return
+					}
+				}
+			}
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
 
 	// Default: server static files
 	router.NotFoundHandler = http.FileServer(http.Dir("./web")).ServeHTTP

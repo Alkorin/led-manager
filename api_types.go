@@ -21,14 +21,16 @@ func NewApiVisualizer(v Visualizer) *ApiVisualizer {
 }
 
 type ApiRenderer struct {
-	Name string `json:"name"`
-	ID   uint64 `json:"id"`
+	Name       string     `json:"name"`
+	ID         uint64     `json:"id"`
+	Properties []Property `json:"properties"`
 }
 
 func NewApiRenderer(r Renderer) *ApiRenderer {
 	return &ApiRenderer{
-		Name: r.Name(),
-		ID:   r.ID(),
+		Name:       r.Name(),
+		ID:         r.ID(),
+		Properties: GetProperties(r),
 	}
 }
 
@@ -59,5 +61,18 @@ func NewApiVisualizerPropertiesChangedEvent(visualizerId uint64) *ApiVisualizerP
 	return &ApiVisualizerPropertiesChangedEvent{
 		ApiEvent{"visualizerPropertiesChanged"},
 		visualizerId,
+	}
+}
+
+type ApiRendererPropertiesChangedEvent struct {
+	ApiEvent
+
+	RendererId uint64
+}
+
+func NewApiRendererPropertiesChangedEvent(rendererId uint64) *ApiRendererPropertiesChangedEvent {
+	return &ApiRendererPropertiesChangedEvent{
+		ApiEvent{"rendererPropertiesChanged"},
+		rendererId,
 	}
 }

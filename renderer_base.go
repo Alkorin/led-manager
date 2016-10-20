@@ -34,3 +34,6 @@ func (r *BaseRenderer) ID() uint64 {
 func (r *BaseRenderer) Name() string {
 	return r.name
 }
+
+func (v *BaseRenderer) OnPropertyChanged(string) {
+}
