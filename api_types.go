@@ -7,16 +7,16 @@ type ApiBuffer struct {
 }
 
 type ApiVisualizer struct {
-	Name       string               `json:"name"`
-	ID         uint64               `json:"id"`
-	Properties []VisualizerProperty `json:"properties"`
+	Name       string     `json:"name"`
+	ID         uint64     `json:"id"`
+	Properties []Property `json:"properties"`
 }
 
 func NewApiVisualizer(v Visualizer) *ApiVisualizer {
 	return &ApiVisualizer{
 		Name:       v.Name(),
 		ID:         v.ID(),
-		Properties: GetVisualizerProperties(v),
+		Properties: GetProperties(v),
 	}
 }
 

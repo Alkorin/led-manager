@@ -82,7 +82,7 @@ func (l *LedManager) StartApi() {
 						w.Write([]byte(err.Error()))
 						return
 					}
-					if err := SetVisualizerProperties(v, data); err != nil {
+					if err := SetProperties(v, data); err != nil {
 						w.WriteHeader(http.StatusBadRequest)
 						w.Write([]byte(err.Error()))
 						return

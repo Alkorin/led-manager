@@ -4,6 +4,8 @@ import (
 	"sync/atomic"
 )
 
+var visualizerIdCounter uint64 = 0
+
 type BaseVisualizer struct {
 	outputChan chan []Led
 	name       string
