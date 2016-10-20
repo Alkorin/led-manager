@@ -4,6 +4,8 @@ import (
 	"sync/atomic"
 )
 
+var rendererIdCounter uint64 = 0
+
 type BaseRenderer struct {
 	getters []getterFunc
 	id      uint64
@@ -12,7 +14,7 @@ type BaseRenderer struct {
 
 func NewBaseRenderer(name string) *BaseRenderer {
 	return &BaseRenderer{
-		id:   atomic.AddUint64(&visualizerIdCounter, 1),
+		id:   atomic.AddUint64(&rendererIdCounter, 1),
 		name: name,
 	}
 }
