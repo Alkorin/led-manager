@@ -9,19 +9,49 @@ import (
 type LedManager struct {
 	buffer []Led
 
-	renderers   []Renderer
+	renderers   map[uint64]Renderer
 	visualizers []Visualizer
 	apiEvents   *broadcaster.Broadcaster
 }
 
-func NewLedManager() *LedManager {
-	return &LedManager{
-		apiEvents: broadcaster.NewBroadcaster(),
+func NewLedManager(renderers []Renderer) *LedManager {
+	// Allocate needed memory
+	totalSize := 0
+	for _, r := range renderers {
+		for _, s := range r.Size() {
+			totalSize += s
+		}
 	}
-}
 
-func (l *LedManager) AttachRenderer(r Renderer) {
-	l.renderers = append(l.renderers, r)
+	log.Printf("Total renderer size: %d", totalSize)
+	buffer := make([]Led, totalSize)
+
+	// Attach getter for each renderers
+	curPos := 0
+	for _, r := range renderers {
+		getters := make([]getterFunc, len(r.Size()))
+		for i, rendererSize := range r.Size() {
+			start := curPos
+			end := curPos + rendererSize
+			getters[i] = func() []Led {
+				return buffer[start:end]
+			}
+			curPos += rendererSize
+		}
+		r.SetGetters(getters)
+	}
+
+	// Allocate renderers map
+	rendererMap := make(map[uint64]Renderer)
+	for _, r := range renderers {
+		rendererMap[r.ID()] = r
+	}
+
+	return &LedManager{
+		buffer:    buffer,
+		apiEvents: broadcaster.NewBroadcaster(),
+		renderers: rendererMap,
+	}
 }
 
 func (l *LedManager) AttachVisualizer(v Visualizer, start int, end int) {
@@ -35,30 +65,8 @@ func (l *LedManager) AttachVisualizer(v Visualizer, start int, end int) {
 }
 
 func (l *LedManager) Start() {
-	// Allocate needed memory
-	totalSize := 0
+	// Start Renderers
 	for _, r := range l.renderers {
-		for _, s := range r.Size() {
-			totalSize += s
-		}
-	}
-
-	log.Printf("Total renderer size: %d", totalSize)
-	l.buffer = make([]Led, totalSize)
-
-	// Attach getter for each renderers
-	curPos := 0
-	for _, r := range l.renderers {
-		getters := make([]getterFunc, len(r.Size()))
-		for i, rendererSize := range r.Size() {
-			start := curPos
-			end := curPos + rendererSize
-			getters[i] = func() []Led {
-				return l.buffer[start:end]
-			}
-			curPos += rendererSize
-		}
-		r.SetGetters(getters)
 		go r.Start()
 	}
 
