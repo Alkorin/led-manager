@@ -10,7 +10,7 @@ type LedManager struct {
 	buffer []Led
 
 	renderers   map[uint64]Renderer
-	visualizers []Visualizer
+	visualizers map[uint64]Visualizer
 	apiEvents   *broadcaster.Broadcaster
 }
 
@@ -48,14 +48,15 @@ func NewLedManager(renderers []Renderer) *LedManager {
 	}
 
 	return &LedManager{
-		buffer:    buffer,
-		apiEvents: broadcaster.NewBroadcaster(),
-		renderers: rendererMap,
+		buffer:      buffer,
+		apiEvents:   broadcaster.NewBroadcaster(),
+		renderers:   rendererMap,
+		visualizers: make(map[uint64]Visualizer),
 	}
 }
 
 func (l *LedManager) AttachVisualizer(v Visualizer, start int, end int) {
-	l.visualizers = append(l.visualizers, v)
+	l.visualizers[v.ID()] = v
 	go func() {
 		for {
 			d := <-v.OutputChan()

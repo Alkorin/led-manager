@@ -59,12 +59,10 @@ func (l *LedManager) StartApi() {
 	router.GET("/api/visualizer/:id", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
 		ID, err := strconv.ParseUint(params["id"], 10, 64)
 		if err == nil {
-			for _, v := range l.visualizers {
-				if ID == v.ID() {
-					j, _ := json.Marshal(NewApiVisualizer(v))
-					w.Write(j)
-					return
-				}
+			if v, ok := l.visualizers[ID]; ok {
+				j, _ := json.Marshal(NewApiVisualizer(v))
+				w.Write(j)
+				return
 			}
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -72,25 +70,23 @@ func (l *LedManager) StartApi() {
 	router.PUT("/api/visualizer/:id/properties", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
 		ID, err := strconv.ParseUint(params["id"], 10, 64)
 		if err == nil {
-			for _, v := range l.visualizers {
-				if ID == v.ID() {
-					body, _ := ioutil.ReadAll(r.Body)
-					data := map[string]interface{}{}
-					err := json.Unmarshal(body, &data)
-					if err != nil {
-						w.WriteHeader(http.StatusBadRequest)
-						w.Write([]byte(err.Error()))
-						return
-					}
-					if err := SetProperties(v, data); err != nil {
-						w.WriteHeader(http.StatusBadRequest)
-						w.Write([]byte(err.Error()))
-						return
-					} else {
-						// OK
-						l.apiEvents.Write(NewApiVisualizerPropertiesChangedEvent(v.ID()))
-						return
-					}
+			if v, ok := l.visualizers[ID]; ok {
+				body, _ := ioutil.ReadAll(r.Body)
+				data := map[string]interface{}{}
+				err := json.Unmarshal(body, &data)
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					w.Write([]byte(err.Error()))
+					return
+				}
+				if err := SetProperties(v, data); err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					w.Write([]byte(err.Error()))
+					return
+				} else {
+					// OK
+					l.apiEvents.Write(NewApiVisualizerPropertiesChangedEvent(v.ID()))
+					return
 				}
 			}
 		}
