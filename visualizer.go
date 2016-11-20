@@ -7,6 +7,7 @@ type Visualizer interface {
 
 	OutputChan() <-chan []Led
 	Start()
+	Close()
 
 	// Methods for API
 	Name() string

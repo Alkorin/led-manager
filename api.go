@@ -67,6 +67,14 @@ func (l *LedManager) StartApi() {
 		}
 		w.WriteHeader(http.StatusNotFound)
 	})
+	router.DELETE("/api/visualizer/:id", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
+		ID, err := strconv.ParseUint(params["id"], 10, 64)
+		if err == nil && l.DetachVisualizer(ID) {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
 	router.PUT("/api/visualizer/:id/properties", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
 		ID, err := strconv.ParseUint(params["id"], 10, 64)
 		if err == nil {

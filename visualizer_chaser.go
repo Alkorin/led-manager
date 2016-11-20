@@ -34,25 +34,33 @@ func (v *ChaserVisualizer) Run() {
 	d := make([]Led, v.length)
 	j := 0.0
 
-	for range time.Tick(10 * time.Millisecond) {
-		j += v.Speed * v.way
-		if int(j) >= v.length {
-			v.way = -1.0
-		} else if int(j) == 0 {
-			v.way = 1.0
-		}
-		for i := range d {
-			if i > int(j)-v.Size && i < int(j)+v.Size {
-				d[i].Red = v.Color.Red
-				d[i].Green = v.Color.Green
-				d[i].Blue = v.Color.Blue
-			} else {
-				d[i].Red = 0
-				d[i].Green = 0
-				d[i].Blue = 0
+	ticker := time.NewTicker(10 * time.Millisecond)
+
+	for {
+		select {
+		case <-v.quit:
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			j += v.Speed * v.way
+			if int(j) >= v.length {
+				v.way = -1.0
+			} else if int(j) == 0 {
+				v.way = 1.0
 			}
+			for i := range d {
+				if i > int(j)-v.Size && i < int(j)+v.Size {
+					d[i].Red = v.Color.Red
+					d[i].Green = v.Color.Green
+					d[i].Blue = v.Color.Blue
+				} else {
+					d[i].Red = 0
+					d[i].Green = 0
+					d[i].Blue = 0
+				}
+			}
+			v.SendData(d)
 		}
-		v.SendData(d)
 	}
 
 }

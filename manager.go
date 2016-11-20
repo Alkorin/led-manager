@@ -59,10 +59,23 @@ func (l *LedManager) AttachVisualizer(v Visualizer, start int, end int) {
 	l.visualizers[v.ID()] = v
 	go func() {
 		for {
-			d := <-v.OutputChan()
+			d, ok := <-v.OutputChan()
+			if !ok {
+				// Channel is closed, done
+				return
+			}
 			copy(l.buffer[start:end+1], d)
 		}
 	}()
+}
+
+func (l *LedManager) DetachVisualizer(ID uint64) bool {
+	if v, ok := l.visualizers[ID]; ok {
+		v.Close()
+		delete(l.visualizers, ID)
+		return true
+	}
+	return false
 }
 
 func (l *LedManager) Start() {

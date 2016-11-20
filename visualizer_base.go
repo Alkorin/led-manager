@@ -7,9 +7,14 @@ import (
 var visualizerIdCounter uint64 = 0
 
 type BaseVisualizer struct {
+	Visualizer
+
 	outputChan chan []Led
 	name       string
 	id         uint64
+
+	isClosed bool
+	quit     chan struct{}
 }
 
 func NewBaseVisualizer(name string) *BaseVisualizer {
@@ -17,14 +22,24 @@ func NewBaseVisualizer(name string) *BaseVisualizer {
 		outputChan: make(chan []Led, 1),
 		name:       name,
 		id:         atomic.AddUint64(&visualizerIdCounter, 1),
+		quit:       make(chan struct{}),
 	}
 }
 
+func (v *BaseVisualizer) Close() {
+	v.isClosed = true
+	close(v.quit)
+	close(v.outputChan)
+}
+
 func (v *BaseVisualizer) SendData(d []Led) {
-	// Send data if chan is free
-	select {
-	case v.outputChan <- d:
-	default:
+	// Don't try to send data on a closed channel, it panics
+	if !v.isClosed {
+		// Send data if chan is free
+		select {
+		case v.outputChan <- d:
+		default:
+		}
 	}
 }
 

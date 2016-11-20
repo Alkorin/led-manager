@@ -31,14 +31,23 @@ func (v *RainbowVisualizer) Start() {
 func (v *RainbowVisualizer) Run() {
 	d := make([]Led, v.length)
 	j := 0.0
-	for range time.Tick(10 * time.Millisecond) {
-		j += v.Speed
-		for i := 0; i < v.length; i++ {
-			r, g, b := hueToRGB(j + float64(i)*v.Width)
-			d[i].Red = r * v.Luminosity
-			d[i].Green = g * v.Luminosity
-			d[i].Blue = b * v.Luminosity
+
+	ticker := time.NewTicker(10 * time.Millisecond)
+
+	for {
+		select {
+		case <-v.quit:
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			j += v.Speed
+			for i := 0; i < v.length; i++ {
+				r, g, b := hueToRGB(j + float64(i)*v.Width)
+				d[i].Red = r * v.Luminosity
+				d[i].Green = g * v.Luminosity
+				d[i].Blue = b * v.Luminosity
+			}
+			v.SendData(d)
 		}
-		v.SendData(d)
 	}
 }

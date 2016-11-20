@@ -64,6 +64,9 @@ func (v *StepColorVisualizer) Run() {
 	// Loop
 	for {
 		select {
+		case <-v.quit:
+			v.ticker.Stop()
+			return
 		case <-v.update:
 			for i := 0; i < len(buffer); i++ {
 				out[i].Red = buffer[i].Red * v.Luminosity

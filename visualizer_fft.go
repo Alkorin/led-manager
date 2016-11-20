@@ -85,6 +85,16 @@ func (v *FFTVisualizer) startPulseAudio() (io.ReadCloser, io.ReadCloser, error) 
 	if err != nil {
 		v.cmd = cmd
 	}
+	// Cleaning
+	go func() {
+		// Wait quit
+		<-v.quit
+		// Kill cmd
+		cmd.Process.Kill()
+		// Close channels
+		stdout.Close()
+		stderr.Close()
+	}()
 	return stdout, stderr, err
 }
 
@@ -112,6 +122,9 @@ func (v *FFTVisualizer) Run() {
 	for {
 		// Read stdout as s16le values
 		err = binary.Read(io.LimitReader(data, int64(2*v.samplesPerFrame)), binary.LittleEndian, &vRead)
+		if v.isClosed {
+			return
+		}
 		if err != nil {
 			break
 		}
